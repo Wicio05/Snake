@@ -7,15 +7,14 @@ workspace "Snake"
 IncludeDir = {}
 IncludeDir["Metal"] = "vendor/MetalSDK"
 
--- group "Dependencies"
---     include "vendor/MetalSDK"
-
 project "Snake"
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++17"
     warnings "default"
+
     targetdir "bin/%{cfg.buildcfg}"
+    objdir "obj/%{cfg.buildcfg}"
 
     files {
         "src/**.h", "src/**.cpp" 
