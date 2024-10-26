@@ -31,6 +31,16 @@ project "Snake"
         "Foundation.framework"
     }
 
-    -- Use `buildoptions` to add the path to "Header Search Paths" in Xcode
+    -- Define settings specifically for macOS
+    filter "system:macosx"
+        defines "NS_PRIVATE_IMPLEMENTATION"
+        defines "MTL_PRIVATE_IMPLEMENTATION"
+        defines "MTK_PRIVATE_IMPLEMENTATION"
+        defines "CA_PRIVATE_IMPLEMENTATION"
+
+    -- Use `buildoptions` to add the path to work around "Header Search Paths" in Xcode
     filter { "action:xcode*" }
         buildoptions { '-I"%{IncludeDir.Metal}"' }
+
+    -- Reset the filter for other settings
+    filter {}
