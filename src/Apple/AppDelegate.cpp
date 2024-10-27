@@ -7,6 +7,8 @@
 
 #include "AppDelegate.hpp"
 
+#include "Core.hpp"
+
 AppDelegate::~AppDelegate()
 {
     view->release();
@@ -39,7 +41,7 @@ void AppDelegate::applicationDidFinishLaunching(NS::Notification* notification)
     view->setDelegate(viewDelegate);
 
     window->setContentView(view);
-    window->setTitle(NS::String::string("Window", NS::StringEncoding::UTF8StringEncoding));
+    window->setTitle(string("Window"));
     window->makeKeyAndOrderFront(nullptr);
 
     NS::Application* app = reinterpret_cast<NS::Application*>(notification->object());

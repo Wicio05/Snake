@@ -8,6 +8,7 @@
 #include "Renderer.hpp"
 
 #include "Shader.hpp"
+#include "Core.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -26,6 +27,9 @@ Renderer::Renderer(MTL::Device *device) : device(device->retain())
 Renderer::~Renderer()
 {
     // free memory
+    shaderLibrary->release();
+
+    argBuffer->release();
     colorsBuffer->release();
     vertexBuffer->release();
     pso->release();
@@ -36,28 +40,26 @@ Renderer::~Renderer()
 
 void Renderer::buildShaders()
 {
-    using NS::StringEncoding::UTF8StringEncoding;
-
     // shader src
     std::vector<char> shaderSrc = Shader::readFile("assets/shaders/Shader.metal");
 
     NS::Error *error = nullptr;
 
     // create library from shader src
-    MTL::Library *library = device->newLibrary(NS::String::string(shaderSrc.data(), UTF8StringEncoding), nullptr, &error);
+    shaderLibrary = device->newLibrary(string(shaderSrc.data()), nullptr, &error);
 
     // check for error
-    if (!library)
+    if (!shaderLibrary)
     {
         std::cerr << error->localizedDescription()->utf8String();
         exit(EXIT_FAILURE);
     }
 
     // get vertex main function from shader src
-    MTL::Function *vertFunc = library->newFunction(NS::String::string("vertexMain", UTF8StringEncoding));
+    MTL::Function *vertFunc = shaderLibrary->newFunction(string("vertexMain"));
 
     // get fragment main function from shader src
-    MTL::Function *fragFunc = library->newFunction(NS::String::string("fragmentMain", UTF8StringEncoding));
+    MTL::Function *fragFunc = shaderLibrary->newFunction(string("fragmentMain"));
 
     // init pipeline descriptor
     MTL::RenderPipelineDescriptor *rpd = MTL::RenderPipelineDescriptor::alloc()->init();
@@ -83,7 +85,6 @@ void Renderer::buildShaders()
     vertFunc->release();
     fragFunc->release();
     rpd->release();
-    library->release();
 }
 
 void Renderer::buildBuffers()
@@ -120,6 +121,31 @@ void Renderer::buildBuffers()
     // uploads a range from 0 to number of elements
     vertexBuffer->didModifyRange(NS::Range::Make(0, vertexBuffer->length()));
     colorsBuffer->didModifyRange(NS::Range::Make(0, colorsBuffer->length()));
+
+    if(!shaderLibrary)
+    {
+        std::cerr << "Shader library was not initialized!\n";
+        exit(EXIT_FAILURE);
+    }
+
+    MTL::Function* pVertexFn = shaderLibrary->newFunction(string("vertexMain"));
+
+    // encode VertexData
+    MTL::ArgumentEncoder* argEncoder = pVertexFn->newArgumentEncoder(0);
+
+    // get vertexData buffer
+    argBuffer = device->newBuffer(argEncoder->encodedLength(), MTL::ResourceStorageModeManaged);
+
+    
+    argEncoder->setArgumentBuffer(argBuffer, 0);
+
+    argEncoder->setBuffer(vertexBuffer, 0, 0);
+    argEncoder->setBuffer(colorsBuffer, 0, 1);
+
+    argBuffer->didModifyRange(NS::Range::Make(0, argBuffer->length()));
+
+    pVertexFn->release();
+    argEncoder->release();
 }
 
 void Renderer::draw(MTK::View *view)
@@ -140,8 +166,9 @@ void Renderer::draw(MTK::View *view)
     encoder->setRenderPipelineState(pso);
 
     // upload verticies and colors
-    encoder->setVertexBuffer(vertexBuffer, 0, 0);
-    encoder->setVertexBuffer(colorsBuffer, 0, 1);
+    encoder->setVertexBuffer(argBuffer, 0, 0);
+    encoder->useResource(vertexBuffer, MTL::ResourceUsageRead);
+    encoder->useResource(colorsBuffer, MTL::ResourceUsageRead);
 
     // draw triangle filled
     encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(3));

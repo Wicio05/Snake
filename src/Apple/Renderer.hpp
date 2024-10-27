@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "config.hpp"
+#include "Config.hpp"
 
 class Renderer
 {
@@ -24,7 +24,10 @@ class Renderer
         MTL::Device* device;
         MTL::CommandQueue* commandQueue;
 
+        MTL::Library* shaderLibrary;
+
         MTL::RenderPipelineState* pso;
+        MTL::Buffer* argBuffer;
         MTL::Buffer* vertexBuffer;
         MTL::Buffer* colorsBuffer;
 };
