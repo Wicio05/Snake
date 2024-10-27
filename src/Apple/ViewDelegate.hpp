@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "config.hpp"
+#include "Renderer.hpp"
 
 class ViewDelegate : public MTK::ViewDelegate
 {
@@ -15,4 +15,7 @@ class ViewDelegate : public MTK::ViewDelegate
         ViewDelegate(MTL::Device* device);
         virtual ~ViewDelegate() override;
         virtual void drawInMTKView(MTK::View* view) override;
+
+    private:
+        Renderer renderer;
 };

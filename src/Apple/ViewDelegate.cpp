@@ -7,7 +7,7 @@
 
 #include "ViewDelegate.hpp"
 
-ViewDelegate::ViewDelegate(MTL::Device* device) : MTK::ViewDelegate()
+ViewDelegate::ViewDelegate(MTL::Device* device) : MTK::ViewDelegate(), renderer(device)
 {
 }
 
@@ -18,5 +18,5 @@ ViewDelegate::~ViewDelegate()
 
 void ViewDelegate::drawInMTKView(MTK::View* view)
 {
-
+    renderer.draw(view);
 }
