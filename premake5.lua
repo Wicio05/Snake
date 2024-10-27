@@ -17,7 +17,7 @@ project "Snake"
     objdir "obj/%{cfg.buildcfg}"
 
     files {
-        "src/**.h", "src/**.cpp" 
+        "src/**.h", "src/**.cpp", "src/**.hpp"
     }
 
     includedirs {
@@ -29,13 +29,6 @@ project "Snake"
         "MetalKit.framework",
         "Foundation.framework"
     }
-
-    -- Define settings specifically for macOS
-    filter "system:macosx"
-        defines "NS_PRIVATE_IMPLEMENTATION"
-        defines "MTL_PRIVATE_IMPLEMENTATION"
-        defines "MTK_PRIVATE_IMPLEMENTATION"
-        defines "CA_PRIVATE_IMPLEMENTATION"
 
     -- Use `buildoptions` to add the path to work around "Header Search Paths" in Xcode
     filter { "action:xcode*" }
