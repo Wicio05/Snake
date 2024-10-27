@@ -22,7 +22,7 @@ int main(int argc, const char * argv[])
     AppDelegate del;
 
     NS::Application* pSharedApplication = NS::Application::sharedApplication();
-    pSharedApplication->setDelegate( &del );
+    pSharedApplication->setDelegate(&del);
     pSharedApplication->run();
 
     pAutoreleasePool->release();
