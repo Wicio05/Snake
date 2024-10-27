@@ -6,16 +6,26 @@
 //
 
 // metal headers
-#include <Metal/Metal.hpp>
-#include <AppKit/AppKit.hpp>
-#include <MetalKit/MetalKit.hpp>
+#define NS_PRIVATE_IMPLEMENTATION
+#define MTL_PRIVATE_IMPLEMENTATION
+#define MTK_PRIVATE_IMPLEMENTATION
+#define CA_PRIVATE_IMPLEMENTATION
+
+#include "Apple/AppDelegate.hpp"
 
 #include <iostream>
 
 int main(int argc, const char * argv[])
 {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    NS::AutoreleasePool* pAutoreleasePool = NS::AutoreleasePool::alloc()->init();
+
+    AppDelegate del;
+
+    NS::Application* pSharedApplication = NS::Application::sharedApplication();
+    pSharedApplication->setDelegate( &del );
+    pSharedApplication->run();
+
+    pAutoreleasePool->release();
 
     return 0;
 }
