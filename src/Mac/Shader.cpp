@@ -19,7 +19,7 @@ std::vector<char> Shader::readFile(const std::string & filepath)
     if(!file.is_open())
     {
         // throw error if file is not open
-        std::cerr << "Failed to open file: " << filepath;
+        std::cerr << "Failed to open file: " << filepath << '\n';
         exit(EXIT_FAILURE);
     }
 

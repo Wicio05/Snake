@@ -34,7 +34,7 @@ class Renderer
 
     private:
         static constexpr int MAX_FRAMES = 3;
-        static constexpr size_t NUM_INSTANCES = 1;
+        static constexpr size_t GRID_SIZE = 25;
 
     private:
         MTL::Device* device;

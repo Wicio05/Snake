@@ -102,8 +102,6 @@ void Renderer::buildShaders()
 
 void Renderer::buildBuffers()
 {
-    // constexpr size_t NUM_VERTICIES = 3;
-
     constexpr float V = 0.5f;
 
     simd::float3 verticies[] = 
@@ -134,7 +132,7 @@ void Renderer::buildBuffers()
     vertexBuffer->didModifyRange(NS::Range::Make(0, vertexBuffer->length()));
     indexBuffer->didModifyRange(NS::Range::Make(0, indexBuffer->length()));
 
-    constexpr size_t instanceDataSize = MAX_FRAMES * NUM_INSTANCES * sizeof(InstanceData);
+    constexpr size_t instanceDataSize = MAX_FRAMES * GRID_SIZE * GRID_SIZE * sizeof(InstanceData);
 
     for (int i = 0; i < MAX_FRAMES; i++)
     {
@@ -162,19 +160,28 @@ void Renderer::draw(MTK::View *view)
     });
 
     // angle += 0.01f;
-    angle += 0.5f;
+    // angle += 0.5f;
+
+    float x = 1.0f / GRID_SIZE;
+    float y = 1.0f / GRID_SIZE;
+
+    // float x = 0.5f;
+    // float y = 0.5f;
     
-    constexpr glm::vec2 size = glm::vec2(1.0f, 1.0f);
+    glm::vec2 size = glm::vec2(x / V, y / V);
     InstanceData* instanceData = reinterpret_cast<InstanceData*>(instanceDataBuffer[frame]->contents());
 
-    for (size_t i = 0; i < NUM_INSTANCES; ++i)
+    for (size_t i = 0; i < GRID_SIZE; ++i)
     {
-        glm::vec3 position = glm::vec3(V - V * size.x, V - V * size.y, 0.0f);
-        
-        glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
+        for (size_t j = 0; j < GRID_SIZE; ++j)
+        {
+            glm::vec3 position = glm::vec3(-1.0f + size.x * 0.5f + i * size.x, 1.0f - size.y * 0.5f - j * size.y, 0.0f);
 
-        instanceData[i].transform = transform;
-        instanceData[i].color = Color::BLUE;
+            glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
+
+            instanceData[i * GRID_SIZE + j].transform = transform;
+            instanceData[i * GRID_SIZE + j].color = glm::vec4(((float) i) / GRID_SIZE, ((float) j) / GRID_SIZE, 1.0f, 0.0f);
+        }
     }
 
     instanceDataBuffer[frame]->didModifyRange(NS::Range::Make(0, instanceDataBuffer[frame]->length()));
@@ -196,7 +203,7 @@ void Renderer::draw(MTK::View *view)
     // void drawIndexedPrimitives( PrimitiveType primitiveType, NS::UInteger indexCount, IndexType indexType,
     //                             const class Buffer* pIndexBuffer, NS::UInteger indexBufferOffset, NS::UInteger instanceCount );
     encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexType::IndexTypeUInt16,
-                                indexBuffer, 0, NUM_INSTANCES );
+                                indexBuffer, 0, GRID_SIZE * GRID_SIZE);
 
     // end encoding
     encoder->endEncoding();

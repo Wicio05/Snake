@@ -17,15 +17,15 @@
 
 int main(int argc, const char * argv[])
 {
-    NS::AutoreleasePool* pAutoreleasePool = NS::AutoreleasePool::alloc()->init();
+    NS::AutoreleasePool* autoreleasePool = NS::AutoreleasePool::alloc()->init();
 
     AppDelegate del;
 
-    NS::Application* pSharedApplication = NS::Application::sharedApplication();
-    pSharedApplication->setDelegate(&del);
-    pSharedApplication->run();
+    NS::Application* sharedApplication = NS::Application::sharedApplication();
+    sharedApplication->setDelegate(&del);
+    sharedApplication->run();
 
-    pAutoreleasePool->release();
+    autoreleasePool->release();
 
     return 0;
 }
