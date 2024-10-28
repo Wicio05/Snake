@@ -185,22 +185,22 @@ void Renderer::draw(MTK::View *view)
             {
                 if(j % 2 == 0)
                 {
-                    instanceData[i * GRID_SIZE + j].color = Color::LIGHT_GREEN;
+                    instanceData[i * GRID_SIZE + j].color = Colors::LIGHT_GREEN;
                 }
                 else
                 {
-                    instanceData[i * GRID_SIZE + j].color = Color::DARK_GREEN;
+                    instanceData[i * GRID_SIZE + j].color = Colors::DARK_GREEN;
                 }
             }
             else
             {
                 if(j % 2 == 1)
                 {
-                    instanceData[i * GRID_SIZE + j].color = Color::LIGHT_GREEN;
+                    instanceData[i * GRID_SIZE + j].color = Colors::LIGHT_GREEN;
                 }
                 else
                 {
-                    instanceData[i * GRID_SIZE + j].color = Color::DARK_GREEN;
+                    instanceData[i * GRID_SIZE + j].color = Colors::DARK_GREEN;
                 }
             }
         }
