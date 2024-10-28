@@ -11,7 +11,7 @@
 #define MTK_PRIVATE_IMPLEMENTATION
 #define CA_PRIVATE_IMPLEMENTATION
 
-#include "Apple/AppDelegate.hpp"
+#include "Mac/AppDelegate.hpp"
 
 #include <iostream>
 
