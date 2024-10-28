@@ -13,12 +13,12 @@
 #include <fstream>
 #include <iostream>
 
-#include <simd/simd.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 struct InstanceData
 {
-    simd::float4x4 transform;
-    simd::float4 color;
+    glm::mat4x4 transform;
+    glm::vec4 color;
 };
 
 Renderer::Renderer(MTL::Device *device) : device(device->retain()), frame(0), angle(0)
@@ -147,6 +147,8 @@ void Renderer::draw(MTK::View *view)
     // init pool
     NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
 
+    constexpr float V = 0.5f;
+
     frame = (frame + 1) % MAX_FRAMES;
 
     // create command buffer
@@ -160,25 +162,19 @@ void Renderer::draw(MTK::View *view)
     });
 
     // angle += 0.01f;
+    angle += 0.5f;
     
-    constexpr float scale = 1.0f;
+    constexpr glm::vec2 size = glm::vec2(1.0f, 1.0f);
     InstanceData* instanceData = reinterpret_cast<InstanceData*>(instanceDataBuffer[frame]->contents());
 
     for (size_t i = 0; i < NUM_INSTANCES; ++i)
     {
-        float xoff = 0.0f;
-        float yoff = 0.0f;
-
-        simd::float4x4 transform = (simd::float4x4)
-        { 
-            (simd::float4) { scale * sinf(angle), scale * cosf(angle), 0.0f, 0.f },
-            (simd::float4) { scale * cosf(angle), scale * -sinf(angle), 0.0f, 0.0f },
-            (simd::float4) { 0.0f, 0.0f, scale, 0.0f },
-            (simd::float4) { xoff, yoff, 0.0f, 1.0f } 
-        };
+        glm::vec3 position = glm::vec3(V - V * size.x, V - V * size.y, 0.0f);
+        
+        glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
         instanceData[i].transform = transform;
-        instanceData[i].color = Color::GREEN;
+        instanceData[i].color = Color::BLUE;
     }
 
     instanceDataBuffer[frame]->didModifyRange(NS::Range::Make(0, instanceDataBuffer[frame]->length()));

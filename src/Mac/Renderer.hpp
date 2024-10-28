@@ -9,15 +9,16 @@
 
 #include "Config.hpp"
 
+#include <glm/glm.hpp>
 #include <simd/simd.h>
 
 struct Color
 {
-    static constexpr simd::float4 BLACK =   (simd::float4) { 0.0f, 0.0f, 0.0f, 1.0f };
-    static constexpr simd::float4 WHITE =   (simd::float4) { 1.0f, 1.0f, 1.0f, 1.0f };
-    static constexpr simd::float4 RED =     (simd::float4) { 1.0f, 0.0f, 0.0f, 1.0f };
-    static constexpr simd::float4 GREEN =   (simd::float4) { 0.0f, 1.0f, 0.0f, 1.0f };
-    static constexpr simd::float4 BLUE =    (simd::float4) { 0.0f, 0.0f, 1.0f, 1.0f };
+    static constexpr glm::vec4 BLACK =    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    static constexpr glm::vec4 WHITE =    glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    static constexpr glm::vec4 RED =      glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    static constexpr glm::vec4 GREEN =    glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+    static constexpr glm::vec4 BLUE =     glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 };
 
 class Renderer

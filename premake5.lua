@@ -6,6 +6,7 @@ workspace "Snake"
 --Include directories relative to root folder (solution directory)
 IncludeDir = {}
 IncludeDir["Metal"] = "vendor/MetalSDK"
+IncludeDir["GLM"] = "vendor/glm"
 
 project "Snake"
     kind "ConsoleApp"
@@ -21,7 +22,8 @@ project "Snake"
     }
 
     includedirs {
-        "%{IncludeDir.Metal}"
+        "%{IncludeDir.Metal}",
+        "%{IncludeDir.GLM}",
     }
 
     links { 
@@ -32,7 +34,7 @@ project "Snake"
 
     -- Use `buildoptions` to add the path to work around "Header Search Paths" in Xcode
     filter { "action:xcode*" }
-        buildoptions { '-I"%{IncludeDir.Metal}"' }
+        buildoptions { '-I"%{IncludeDir.Metal}" -I"%{IncludeDir.GLM}"' }
 
     -- Reset the filter for other settings
     filter {}
