@@ -15,13 +15,27 @@
 
 #include <simd/simd.h>
 
-Renderer::Renderer(MTL::Device *device) : device(device->retain())
+struct FrameData
+{
+    float angle;
+};
+
+Renderer::Renderer(MTL::Device *device) : device(device->retain()), frame(0), angle(0)
 {
     // create command queue
     commandQueue = device->newCommandQueue();
 
     buildShaders();
     buildBuffers();
+
+    for ( int i = 0; i < maxFrames; ++i )
+    {
+        // allocate frame buffers on the device
+        frameData[i]= device->newBuffer(sizeof(FrameData), MTL::ResourceStorageModeManaged);
+        frameData[i]->didModifyRange(NS::Range::Make(0, sizeof(float)));
+    }
+
+    semaphore = dispatch_semaphore_create(maxFrames);
 }
 
 Renderer::~Renderer()
@@ -136,7 +150,6 @@ void Renderer::buildBuffers()
     // get vertexData buffer
     argBuffer = device->newBuffer(argEncoder->encodedLength(), MTL::ResourceStorageModeManaged);
 
-    
     argEncoder->setArgumentBuffer(argBuffer, 0);
 
     argEncoder->setBuffer(vertexBuffer, 0, 0);
@@ -153,8 +166,20 @@ void Renderer::draw(MTK::View *view)
     // init pool
     NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
 
+    frame = (frame + 1) % maxFrames;
+
     // create command buffer
     MTL::CommandBuffer *cmd = commandQueue->commandBuffer();
+
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+    
+    cmd->addCompletedHandler(^void(MTL::CommandBuffer* cmd)
+    {
+        dispatch_semaphore_signal(semaphore);
+    });
+
+    angle += 0.01f;
+    *reinterpret_cast<float*>(frameData[frame]->contents()) = angle;
 
     // create render pass descriptor
     MTL::RenderPassDescriptor *rpd = view->currentRenderPassDescriptor();
@@ -165,10 +190,13 @@ void Renderer::draw(MTK::View *view)
     // set render pipeline state
     encoder->setRenderPipelineState(pso);
 
-    // upload verticies and colors
+    // upload verticies and colors on position 0
     encoder->setVertexBuffer(argBuffer, 0, 0);
     encoder->useResource(vertexBuffer, MTL::ResourceUsageRead);
     encoder->useResource(colorsBuffer, MTL::ResourceUsageRead);
+
+    // upload frame data on position 1
+    encoder->setVertexBuffer(frameData[frame], 0, 1);
 
     // draw triangle filled
     encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(3));

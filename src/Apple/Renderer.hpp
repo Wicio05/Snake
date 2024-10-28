@@ -30,4 +30,11 @@ class Renderer
         MTL::Buffer* argBuffer;
         MTL::Buffer* vertexBuffer;
         MTL::Buffer* colorsBuffer;
+
+        MTL::Buffer* frameData[3];
+        float angle;
+        int frame;
+
+        dispatch_semaphore_t semaphore;
+        static constexpr int maxFrames = 3;
 };
