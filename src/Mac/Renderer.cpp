@@ -180,7 +180,29 @@ void Renderer::draw(MTK::View *view)
             glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
             instanceData[i * GRID_SIZE + j].transform = transform;
-            instanceData[i * GRID_SIZE + j].color = glm::vec4(((float) i) / GRID_SIZE, ((float) j) / GRID_SIZE, 1.0f, 0.0f);
+
+            if(i % 2 == 0)
+            {
+                if(j % 2 == 0)
+                {
+                    instanceData[i * GRID_SIZE + j].color = Color::LIGHT_GREEN;
+                }
+                else
+                {
+                    instanceData[i * GRID_SIZE + j].color = Color::DARK_GREEN;
+                }
+            }
+            else
+            {
+                if(j % 2 == 1)
+                {
+                    instanceData[i * GRID_SIZE + j].color = Color::LIGHT_GREEN;
+                }
+                else
+                {
+                    instanceData[i * GRID_SIZE + j].color = Color::DARK_GREEN;
+                }
+            }
         }
     }
 
