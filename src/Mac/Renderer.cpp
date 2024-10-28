@@ -15,9 +15,10 @@
 
 #include <simd/simd.h>
 
-struct FrameData
+struct InstanceData
 {
-    float angle;
+    simd::float4x4 transform;
+    simd::float4 color;
 };
 
 Renderer::Renderer(MTL::Device *device) : device(device->retain()), frame(0), angle(0)
@@ -28,14 +29,7 @@ Renderer::Renderer(MTL::Device *device) : device(device->retain()), frame(0), an
     buildShaders();
     buildBuffers();
 
-    for ( int i = 0; i < maxFrames; ++i )
-    {
-        // allocate frame buffers on the device
-        frameData[i]= device->newBuffer(sizeof(FrameData), MTL::ResourceStorageModeManaged);
-        frameData[i]->didModifyRange(NS::Range::Make(0, sizeof(float)));
-    }
-
-    semaphore = dispatch_semaphore_create(maxFrames);
+    semaphore = dispatch_semaphore_create(MAX_FRAMES);
 }
 
 Renderer::~Renderer()
@@ -43,9 +37,14 @@ Renderer::~Renderer()
     // free memory
     shaderLibrary->release();
 
-    argBuffer->release();
-    colorsBuffer->release();
+    for (int i = 0; i < MAX_FRAMES; i++)
+    {
+        instanceDataBuffer[i]->release();
+    }
+
+    indexBuffer->release();
     vertexBuffer->release();
+
     pso->release();
 
     commandQueue->release();
@@ -103,62 +102,44 @@ void Renderer::buildShaders()
 
 void Renderer::buildBuffers()
 {
-    const size_t NumVertices = 3;
+    // constexpr size_t NUM_VERTICIES = 3;
 
-    simd::float3 positions[NumVertices] =
+    constexpr float V = 0.5f;
+
+    simd::float3 verticies[] = 
     {
-        {-0.8f, 0.8f, 0.0f},
-        {0.0f, -0.8f, 0.0f},
-        {+0.8f, 0.8f, 0.0f}
+        { -V, -V, +V },
+        { +V, -V, +V },
+        { +V, +V, +V },
+        { -V, +V, +V }
     };
 
-    simd::float3 colors[NumVertices] =
+    uint16_t indices[] = 
     {
-        {1.0, 0.3f, 0.2f},
-        {0.8f, 1.0, 0.0f},
-        {0.8f, 0.0f, 1.0}
+        0, 1, 2,
+        2, 3, 0,
     };
 
-    const size_t positionsDataSize = NumVertices * sizeof(simd::float3);
-    const size_t colorDataSize = NumVertices * sizeof(simd::float3);
+    constexpr size_t vertexDataSize = sizeof(verticies);
+    constexpr size_t indexDataSize = sizeof(indices);
 
-    // allocate enough memory to store position array on the device
-    vertexBuffer = device->newBuffer(positionsDataSize, MTL::ResourceStorageModeManaged);
-
-    // allocate enough memory to store colors array on the device
-    colorsBuffer = device->newBuffer(colorDataSize, MTL::ResourceStorageModeManaged);
+    vertexBuffer = device->newBuffer(vertexDataSize, MTL::ResourceStorageModeManaged);
+    indexBuffer = device->newBuffer(indexDataSize, MTL::ResourceStorageModeManaged);
 
     // upload values to the buffer on the device
-    memcpy(vertexBuffer->contents(), positions, positionsDataSize);
-    memcpy(colorsBuffer->contents(), colors, colorDataSize);
+    memcpy(vertexBuffer->contents(), verticies, vertexDataSize);
+    memcpy(indexBuffer->contents(), indices, indexDataSize);
 
     // uploads a range from 0 to number of elements
     vertexBuffer->didModifyRange(NS::Range::Make(0, vertexBuffer->length()));
-    colorsBuffer->didModifyRange(NS::Range::Make(0, colorsBuffer->length()));
+    indexBuffer->didModifyRange(NS::Range::Make(0, indexBuffer->length()));
 
-    if(!shaderLibrary)
+    constexpr size_t instanceDataSize = MAX_FRAMES * NUM_INSTANCES * sizeof(InstanceData);
+
+    for (int i = 0; i < MAX_FRAMES; i++)
     {
-        std::cerr << "Shader library was not initialized!\n";
-        exit(EXIT_FAILURE);
+        instanceDataBuffer[i] = device->newBuffer(instanceDataSize, MTL::ResourceStorageModeManaged);
     }
-
-    MTL::Function* pVertexFn = shaderLibrary->newFunction(string("vertexMain"));
-
-    // encode VertexData
-    MTL::ArgumentEncoder* argEncoder = pVertexFn->newArgumentEncoder(0);
-
-    // get vertexData buffer
-    argBuffer = device->newBuffer(argEncoder->encodedLength(), MTL::ResourceStorageModeManaged);
-
-    argEncoder->setArgumentBuffer(argBuffer, 0);
-
-    argEncoder->setBuffer(vertexBuffer, 0, 0);
-    argEncoder->setBuffer(colorsBuffer, 0, 1);
-
-    argBuffer->didModifyRange(NS::Range::Make(0, argBuffer->length()));
-
-    pVertexFn->release();
-    argEncoder->release();
 }
 
 void Renderer::draw(MTK::View *view)
@@ -166,7 +147,7 @@ void Renderer::draw(MTK::View *view)
     // init pool
     NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
 
-    frame = (frame + 1) % maxFrames;
+    frame = (frame + 1) % MAX_FRAMES;
 
     // create command buffer
     MTL::CommandBuffer *cmd = commandQueue->commandBuffer();
@@ -178,8 +159,30 @@ void Renderer::draw(MTK::View *view)
         dispatch_semaphore_signal(semaphore);
     });
 
-    angle += 0.01f;
-    *reinterpret_cast<float*>(frameData[frame]->contents()) = angle;
+    // angle += 0.01f;
+    
+    constexpr float scale = 1.0f;
+    InstanceData* instanceData = reinterpret_cast<InstanceData*>(instanceDataBuffer[frame]->contents());
+
+    for (size_t i = 0; i < NUM_INSTANCES; ++i)
+    {
+        float xoff = 0.0f;
+        float yoff = 0.0f;
+
+        simd::float4x4 transform = (simd::float4x4)
+        { 
+            (simd::float4) { scale * sinf(angle), scale * cosf(angle), 0.0f, 0.f },
+            (simd::float4) { scale * cosf(angle), scale * -sinf(angle), 0.0f, 0.0f },
+            (simd::float4) { 0.0f, 0.0f, scale, 0.0f },
+            (simd::float4) { xoff, yoff, 0.0f, 1.0f } 
+        };
+
+        instanceData[i].transform = transform;
+        instanceData[i].color = Color::GREEN;
+    }
+
+    instanceDataBuffer[frame]->didModifyRange(NS::Range::Make(0, instanceDataBuffer[frame]->length()));
+
 
     // create render pass descriptor
     MTL::RenderPassDescriptor *rpd = view->currentRenderPassDescriptor();
@@ -190,16 +193,14 @@ void Renderer::draw(MTK::View *view)
     // set render pipeline state
     encoder->setRenderPipelineState(pso);
 
-    // upload verticies and colors on position 0
-    encoder->setVertexBuffer(argBuffer, 0, 0);
-    encoder->useResource(vertexBuffer, MTL::ResourceUsageRead);
-    encoder->useResource(colorsBuffer, MTL::ResourceUsageRead);
+    encoder->setVertexBuffer(vertexBuffer, /* offset */ 0, /* index */ 0);
+    encoder->setVertexBuffer(instanceDataBuffer[frame], /* offset */ 0, /* index */ 1);
 
-    // upload frame data on position 1
-    encoder->setVertexBuffer(frameData[frame], 0, 1);
-
-    // draw triangle filled
-    encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(3));
+    //
+    // void drawIndexedPrimitives( PrimitiveType primitiveType, NS::UInteger indexCount, IndexType indexType,
+    //                             const class Buffer* pIndexBuffer, NS::UInteger indexBufferOffset, NS::UInteger instanceCount );
+    encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexType::IndexTypeUInt16,
+                                indexBuffer, 0, NUM_INSTANCES );
 
     // end encoding
     encoder->endEncoding();

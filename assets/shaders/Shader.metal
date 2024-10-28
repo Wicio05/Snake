@@ -9,17 +9,22 @@ struct v2f
 
 struct VertexData
 {
-    device float3* positions [[id(0)]];
-    device float3* colors [[id(1)]];
+    float3 position;
 };
 
-v2f vertex vertexMain(device const VertexData* vertexData [[buffer(0)]], constant float* angle[[buffer(1)]], uint vertexId [[vertex_id]])
+struct InstanceData
 {
-    float a = *angle;
-    float3x3 rotationMatrix = float3x3( sin(a), cos(a), 0.0, cos(a), -sin(a), 0.0, 0.0, 0.0, 1.0 );
+    float4x4 transform;
+    float4 color;
+};
+
+v2f vertex vertexMain(device const VertexData* vertexData [[buffer(0)]], device const InstanceData* instanceData[[buffer(1)]], 
+                        uint vertexId [[vertex_id]], uint instanceId [[instance_id]])
+{
+    float4 position = float4(vertexData[vertexId].position, 1.0);
     v2f o;
-    o.position = float4(rotationMatrix * vertexData->positions[ vertexId ], 1.0);
-    o.color = half3(vertexData->colors[ vertexId ]);
+    o.position = instanceData[instanceId].transform * position;
+    o.color = half3(instanceData[instanceId].color.rgb);
     return o;
 }
 
