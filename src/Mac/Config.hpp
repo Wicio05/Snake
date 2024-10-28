@@ -1,5 +1,5 @@
 //
-//  config.hpp
+//  Config.hpp
 //  Snake
 //
 //  Created by Witek Cybulski on 27/10/2024.
