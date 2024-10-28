@@ -11,10 +11,29 @@
 
 AppDelegate::~AppDelegate()
 {
+    // Clean up the timer when application is closing
+    if (timer) 
+    {
+        dispatch_source_cancel(timer);
+        dispatch_release(timer);
+        timer = nullptr;
+    }
+    
     view->release();
     window->release();
     device->release();
     delete viewDelegate;
+}
+
+NS::Menu * AppDelegate::createMenuBar()
+{
+    return nullptr;
+}
+
+void AppDelegate::update()
+{
+    frame = (frame + 1) % 60;
+    std::cout << "Update func " << frame << '\n';
 }
 
 void AppDelegate::applicationWillFinishLaunching(NS::Notification* notification)
@@ -46,6 +65,21 @@ void AppDelegate::applicationDidFinishLaunching(NS::Notification* notification)
 
     NS::Application* app = reinterpret_cast<NS::Application*>(notification->object());
     app->activateIgnoringOtherApps(true);
+    
+    // timer
+    timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    if (timer) 
+    {
+        dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 0), NSEC_PER_SEC / 60,  // 60 times per second
+                                  (1ull * NSEC_PER_SEC) / 120); // leeway
+
+        dispatch_source_set_event_handler(timer, 
+        ^{
+            this->update();
+        });
+
+        dispatch_resume(timer);
+    }
 }
 
 bool AppDelegate::applicationShouldTerminateAfterLastWindowClosed(NS::Application* sender)

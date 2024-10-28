@@ -7,7 +7,11 @@
 
 #pragma once
 
+// #include <dispatch/dispatch.h>
+
 #include "ViewDelegate.hpp"
+
+#include <iostream>
 
 class AppDelegate : public NS::ApplicationDelegate
 {
@@ -15,12 +19,18 @@ class AppDelegate : public NS::ApplicationDelegate
         ~AppDelegate();
 
         NS::Menu* createMenuBar();
+    
+        void update();
 
-        virtual void applicationWillFinishLaunching( NS::Notification* pNotification ) override;
-        virtual void applicationDidFinishLaunching( NS::Notification* pNotification ) override;
-        virtual bool applicationShouldTerminateAfterLastWindowClosed( NS::Application* pSender ) override;
+        virtual void applicationWillFinishLaunching(NS::Notification* notification) override;
+        virtual void applicationDidFinishLaunching(NS::Notification* notification) override;
+        virtual bool applicationShouldTerminateAfterLastWindowClosed(NS::Application* sender) override;
+
 
     private:
+        dispatch_source_t timer;
+        int frame = 0;
+
         NS::Window* window;
         MTK::View* view;
         MTL::Device* device;
