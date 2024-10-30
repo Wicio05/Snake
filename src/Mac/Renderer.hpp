@@ -13,6 +13,11 @@
 #include <glm/glm.hpp>
 #include <simd/simd.h>
 
+//  TODO:
+//      make begin and end scene to make draw method not independent 
+//      make draw snake method 
+//      make draw apple method
+
 class Renderer
 {
     public:
@@ -22,7 +27,10 @@ class Renderer
         void buildShaders();
         void buildBuffers();
 
-        void draw(MTK::View* view);
+        void beginScene();
+        void endScene(MTK::View *view);
+
+        void draw();
 
     private:
         static constexpr int MAX_FRAMES = 3;
@@ -44,4 +52,6 @@ class Renderer
         int frame;
 
         dispatch_semaphore_t semaphore;
+
+        MTL::CommandBuffer* commandBuffer;
 };

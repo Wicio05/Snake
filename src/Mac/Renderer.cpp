@@ -47,6 +47,7 @@ Renderer::~Renderer()
 
     pso->release();
 
+    commandBuffer->release();
     commandQueue->release();
     device->release();
 }
@@ -54,7 +55,7 @@ Renderer::~Renderer()
 void Renderer::buildShaders()
 {
     // shader src
-    std::vector<char> shaderSrc = Shader::readFile("assets/shaders/Shader.metal");
+    std::vector<char> shaderSrc = Shader::readFile("./../../assets/shaders/Shader.metal");
 
     NS::Error *error = nullptr;
 
@@ -140,24 +141,55 @@ void Renderer::buildBuffers()
     }
 }
 
-void Renderer::draw(MTK::View *view)
+void Renderer::beginScene()
 {
-    // init pool
-    NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
-
-    constexpr float V = 0.5f;
-
-    frame = (frame + 1) % MAX_FRAMES;
-
     // create command buffer
-    MTL::CommandBuffer *cmd = commandQueue->commandBuffer();
+    commandBuffer = commandQueue->commandBuffer();
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-    
-    cmd->addCompletedHandler(^void(MTL::CommandBuffer* cmd)
+
+    commandBuffer->addCompletedHandler(^void(MTL::CommandBuffer* commandBuffer)
     {
         dispatch_semaphore_signal(semaphore);
     });
+}
+
+void Renderer::endScene(MTK::View *view)
+{
+    // create render pass descriptor
+    MTL::RenderPassDescriptor *rpd = view->currentRenderPassDescriptor();
+
+    // create encoder
+    // MTL::RenderCommandEncoder *encoder = cmd->renderCommandEncoder(rpd);
+    MTL::RenderCommandEncoder *encoder = commandBuffer->renderCommandEncoder(rpd);
+
+    // set render pipeline state
+    encoder->setRenderPipelineState(pso);
+
+    encoder->setVertexBuffer(vertexBuffer, /* offset */ 0, /* index */ 0);
+    encoder->setVertexBuffer(instanceDataBuffer[frame], /* offset */ 0, /* index */ 1);
+
+    //
+    // void drawIndexedPrimitives( PrimitiveType primitiveType, NS::UInteger indexCount, IndexType indexType,
+    //                             const class Buffer* pIndexBuffer, NS::UInteger indexBufferOffset, NS::UInteger instanceCount );
+    encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexType::IndexTypeUInt16,
+                                indexBuffer, 0, GRID_SIZE * GRID_SIZE);
+
+    // end encoding
+    encoder->endEncoding();
+    // cmd->presentDrawable(view->currentDrawable());
+    commandBuffer->presentDrawable(view->currentDrawable());
+
+    // commit command buffer
+    // cmd->commit();
+    commandBuffer->commit();
+}
+
+void Renderer::draw()
+{
+    frame = (frame + 1) % MAX_FRAMES;
+
+    constexpr float V = 0.5f;
 
     // angle += 0.01f;
     // angle += 0.5f;
@@ -207,33 +239,4 @@ void Renderer::draw(MTK::View *view)
     }
 
     instanceDataBuffer[frame]->didModifyRange(NS::Range::Make(0, instanceDataBuffer[frame]->length()));
-
-
-    // create render pass descriptor
-    MTL::RenderPassDescriptor *rpd = view->currentRenderPassDescriptor();
-
-    // create encoder
-    MTL::RenderCommandEncoder *encoder = cmd->renderCommandEncoder(rpd);
-
-    // set render pipeline state
-    encoder->setRenderPipelineState(pso);
-
-    encoder->setVertexBuffer(vertexBuffer, /* offset */ 0, /* index */ 0);
-    encoder->setVertexBuffer(instanceDataBuffer[frame], /* offset */ 0, /* index */ 1);
-
-    //
-    // void drawIndexedPrimitives( PrimitiveType primitiveType, NS::UInteger indexCount, IndexType indexType,
-    //                             const class Buffer* pIndexBuffer, NS::UInteger indexBufferOffset, NS::UInteger instanceCount );
-    encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexType::IndexTypeUInt16,
-                                indexBuffer, 0, GRID_SIZE * GRID_SIZE);
-
-    // end encoding
-    encoder->endEncoding();
-    cmd->presentDrawable(view->currentDrawable());
-
-    // commit command buffer
-    cmd->commit();
-
-    // relese pool
-    pool->release();
 }

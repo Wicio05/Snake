@@ -44,7 +44,7 @@ void AppDelegate::applicationWillFinishLaunching(NS::Notification* notification)
 
 void AppDelegate::applicationDidFinishLaunching(NS::Notification* notification)
 {
-    CGRect frame = (CGRect){ {125.0, 125.0}, {1000.0, 750.0} };
+    CGRect frame = (CGRect){ {125.0, 125.0}, {800.0, 800.0} };
 
     uint64_t windowStyleMask = NS::WindowStyleMaskClosable | NS::WindowStyleMaskTitled | NS::WindowStyleMaskMiniaturizable | NS::WindowStyleMaskResizable;
 

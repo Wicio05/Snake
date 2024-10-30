@@ -18,5 +18,7 @@ ViewDelegate::~ViewDelegate()
 
 void ViewDelegate::drawInMTKView(MTK::View* view)
 {
-    renderer.draw(view);
+    renderer.beginScene();
+    renderer.draw();
+    renderer.endScene(view);
 }
